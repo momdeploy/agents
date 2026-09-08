@@ -101,6 +101,12 @@ one name are refused with their slugs, which are unique — clone by slug then, 
 Without a directory the project's name is used, and a directory that already has files in it is
 never written into.
 
+The dashboard hands a project over as a short text that ends in exactly this command, and it
+says nothing else about the project. That is deliberate: the clone's report carries the rest.
+`URL:` is where the project answers, and `Access: read-only` appears when the project was shared
+without the right to push (`"role": "viewer"` in `--json`). Read the report rather than asking
+the user for those facts.
+
 The clone arrives ready to push: the remote is called `momdeploy` rather than `origin`, git is
 configured to take the momdeploy token from this CLI, and the link file is written unless the
 repository already carries one. From there step 3 and step 5 work as they do anywhere else.
@@ -166,13 +172,17 @@ does not want to wait.
 `Nothing to push: <branch> is already at <sha>` with exit code `0` is a normal outcome, not an
 error: there was nothing new to send.
 
+A project shared read-only cannot be pushed — the platform refuses, and retrying changes nothing.
+Make the changes, then hand them to the owner as a diff or a branch instead of pushing.
+
 Build logs are not available to users — the log gives step names and their outcome. When a step
 fails, look for the cause in the manifest and the Dockerfile, fix it, and push again.
 
 ## Step 6: Report
 
-Tell the user the URL (`project.domain` from `init`, or `momdeploy project list`), what was
-deployed, and what is left for them to do: set a secret, point a domain, fill a placeholder.
+Tell the user the URL (`project.domain` from `init`, the `URL:` line of `project clone`, or
+`momdeploy project list`), what was deployed, and what is left for them to do: set a secret,
+point a domain, fill a placeholder.
 
 ## When a command refuses
 
@@ -185,6 +195,7 @@ deployed, and what is left for them to do: set a secret, point a domain, fill a 
 | `momdeploy.yaml and Dockerfile are missing at the repository root` | Write the missing file — step 3. |
 | `HEAD is detached` | `git switch -c main`, then push again. |
 | `the project's git rejected the momdeploy token` | The token expired: `momdeploy auth`, then push again. |
+| `Access: read-only` in the clone report, or a push refused with `403` | The project was shared as viewer. Do not retry; hand the changes to the owner. |
 | `deploy failed at the build` | The build broke: check the manifest and the Dockerfile against the failing step's name. |
 | `a newer push took over` | Another push superseded this one; follow that deploy instead. |
 | `no project …: it does not exist, or nobody has shared it with you` | Wrong id, slug or name, or the project was never shared with this account. `project list` shows what is reachable. |
