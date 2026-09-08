@@ -1,0 +1,57 @@
+#!/bin/sh
+# momdeploy launcher shipped with the plugin.
+#
+# Skills call this script by absolute path, as ${CLAUDE_PLUGIN_ROOT}/scripts/momdeploy. It lives in
+# scripts/ rather than bin/ on purpose: claude.ai refuses to host a plugin with a top-level bin/,
+# because those land on the Bash tool's PATH without appearing on the admin approval surface.
+#
+# The script only picks the right build out of ../platform and execs it. The plugin ships real
+# binaries rather than downloading one, so the CLI works with no network, no install step and no
+# version drift between the plugin and the CLI.
+#
+# Picking at run time matters because the shell that runs this is not always the machine the plugin
+# was installed on. In Claude Code it is the developer's own OS; in Cowork, shell commands run
+# inside a Linux VM. One darwin binary would fail there with "cannot execute binary file".
+set -eu
+
+# An explicit build wins over everything: this is how you test a local CLI against the plugin.
+if [ -n "${MOMDEPLOY_BIN:-}" ]; then
+    [ -x "$MOMDEPLOY_BIN" ] || {
+        printf 'momdeploy: MOMDEPLOY_BIN=%s is not an executable file\n' "$MOMDEPLOY_BIN" >&2
+        exit 1
+    }
+    exec "$MOMDEPLOY_BIN" "$@"
+fi
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd -P)
+
+case $(uname -s) in
+    Linux) os=linux ;;
+    Darwin) os=darwin ;;
+    MINGW* | MSYS* | CYGWIN* | Windows_NT) os=windows ;;
+    *)
+        printf 'momdeploy: unsupported operating system %s\n' "$(uname -s)" >&2
+        exit 1
+        ;;
+esac
+
+case $(uname -m) in
+    x86_64 | amd64) arch=amd64 ;;
+    arm64 | aarch64) arch=arm64 ;;
+    *)
+        printf 'momdeploy: unsupported architecture %s\n' "$(uname -m)" >&2
+        exit 1
+        ;;
+esac
+
+exe=''
+[ "$os" = windows ] && exe='.exe'
+
+binary=$root/platform/momdeploy-$os-$arch$exe
+if [ ! -x "$binary" ]; then
+    printf 'momdeploy: this plugin ships no build for %s/%s; set MOMDEPLOY_BIN to your own\n' \
+        "$os" "$arch" >&2
+    exit 1
+fi
+
+exec "$binary" "$@"
