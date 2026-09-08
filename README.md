@@ -19,11 +19,11 @@ API key" reach them without anyone typing a slash command.
 ## Install
 
 ```sh
-claude plugin marketplace add momdeploy/claude-plugin
+claude plugin marketplace add momdeploy/agents
 claude plugin install mom@momdeploy
 ```
 
-The same from inside a session, with `/plugin marketplace add momdeploy/claude-plugin` and
+The same from inside a session, with `/plugin marketplace add momdeploy/agents` and
 `/plugin install mom@momdeploy`. Restart the session to apply.
 
 To update later:

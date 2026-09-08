@@ -14,7 +14,7 @@
       "description": "Ship code with momdeploy: create or clone the project, write momdeploy.yaml and a Dockerfile, push, follow the deploy and hand back a URL.",
       "category": "deployment",
       "homepage": "https://momdeploy.com",
-      "repository": "https://github.com/momdeploy/claude-plugin",
+      "repository": "https://github.com/momdeploy/agents",
       "keywords": ["deploy", "momdeploy", "docker", "hosting", "cli"]
     }
   ]
