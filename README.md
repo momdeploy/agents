@@ -9,7 +9,9 @@ inside the plugin, so there is nothing to install, download or configure first.
 
 | Command | What it does |
 | --- | --- |
+| `/mom:clone` | Take over an existing project: sign in, clone the code, say where it landed and how to run it locally, and wait for you to ask before deploying |
 | `/mom:deploy` | The whole path: sign in, create or clone the project, write the two required files, push, follow the deploy, report the URL |
+| `/mom:pull` | Bring down what somebody else pushed to the project, and sort out a branch that diverged from it |
 | `/mom:manifest` | Write, fix or review `momdeploy.yaml` and the `Dockerfile` next to it |
 | `/mom:secrets` | Set, list, delete and rotate project secrets without a value ever reaching a command argument |
 
@@ -39,8 +41,10 @@ Point Claude at a directory with code and ask it to ship it. The first command t
 account starts the sign-in: the CLI prints a short code and a link, you approve it in a browser,
 and the token lands on disk. Nothing is pasted into a config file.
 
-To continue a project that already exists, give Claude its id, slug or name. It clones the code,
-and from there the loop is the same.
+To continue a project that already exists, give Claude its id, slug or name, or paste the
+hand-over text from the dashboard. Claude clones the code, tells you where it landed and how to
+run it locally when the README says, and deploys only when you ask: `/mom:deploy`. Editing code
+is not a deploy.
 
 ## What is inside
 
@@ -50,10 +54,10 @@ plugins/mom/
 ├── .claude-plugin/plugin.json    the plugin manifest
 ├── scripts/momdeploy             launcher; picks the build for the current OS
 ├── platform/                     the CLI, one binary per platform
-└── skills/{deploy,manifest,secrets}
+└── skills/{clone,deploy,manifest,pull,secrets}
 ```
 
-The CLI covers `auth`, `init`, `project create | list | clone`, `push` and
+The CLI covers `auth`, `init`, `project create | list | clone`, `push`, `pull` and
 `secret put | delete | list`.
 
 ## The CLI

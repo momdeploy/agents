@@ -1,6 +1,6 @@
 ---
 name: deploy
-description: Deploys code with momdeploy — creates or clones the project, writes momdeploy.yaml and a Dockerfile, pushes, follows the deploy and reports the URL. Use when the user asks to deploy, publish, ship or host this code, wants a URL for it, hands over an existing momdeploy project to take over or continue, mentions momdeploy, `momdeploy init`, `momdeploy project clone`, `momdeploy push` or `momdeploy secret`, or asks why a momdeploy deploy failed.
+description: Deploys code with momdeploy — creates or clones the project, writes momdeploy.yaml and a Dockerfile, pushes, follows the deploy and reports the URL. Use when the user asks to deploy, publish, ship or host this code, wants a URL for it, asks to push or send changes to momdeploy, mentions `momdeploy init`, `momdeploy push` or `momdeploy secret`, or asks why a momdeploy deploy failed. Not for a project someone merely hands over to work on — that is `/mom:clone`, which clones and stops before deploying.
 compatibility: The momdeploy CLI ships inside this plugin and is run by its full path; git and a shell are still needed. Works wherever Claude runs shell commands against a working copy; a chat-only surface has nothing to push.
 ---
 
@@ -13,6 +13,12 @@ the platform's business.
 
 Never mention Kubernetes, Helm, ingress or the platform's GitLab to the user: those are internal
 details the CLI deliberately hides. A project is addressed by its name, its id and its domain.
+
+Deploy when asked, and only then. Editing code, answering a question about the project or taking
+over a project someone handed you is not a request to deploy: do not run `momdeploy push` on your
+own after a change, however finished it looks. The user says "deploy", "ship", "publish" or runs
+`/mom:deploy` when they are ready. A project handed over for work is `/mom:clone`'s job: it
+clones, reports, offers a local run and stops.
 
 Copy this checklist and tick items off as you go:
 
@@ -89,8 +95,8 @@ platform has no git address yet and nothing can be pushed — say so and stop.
 
 ### The project exists and the code is not here
 
-This is the other half of `init`, and it is the usual start for an agent working in a fresh
-sandbox: the user hands over a project and nothing else. Bring the code down:
+This is the other half of `init`. When the user asks to deploy a project whose code is not on
+this machine, bring it down first:
 
 ```
 "${CLAUDE_PLUGIN_ROOT}/scripts/momdeploy" project clone <project> [directory]
@@ -101,11 +107,12 @@ one name are refused with their slugs, which are unique — clone by slug then, 
 Without a directory the project's name is used, and a directory that already has files in it is
 never written into.
 
-The dashboard hands a project over as a short text that ends in exactly this command, and it
-says nothing else about the project. That is deliberate: the clone's report carries the rest.
-`URL:` is where the project answers, and `Access: read-only` appears when the project was shared
-without the right to push (`"role": "viewer"` in `--json`). Read the report rather than asking
-the user for those facts.
+A project the user merely hands over — the dashboard's text ends in this command and asks for
+nothing else — is not a deploy: `/mom:clone` clones it, reports and stops, and this skill comes
+in later, when the user asks. Either way the clone's report says what the text does not: `URL:`
+is where the project answers, and `Access: read-only` appears when the project was shared without
+the right to push (`"role": "viewer"` in `--json`). Read the report rather than asking the user
+for those facts.
 
 The clone arrives ready to push: the remote is called `momdeploy` rather than `origin`, git is
 configured to take the momdeploy token from this CLI, and the link file is written unless the
@@ -175,6 +182,10 @@ error: there was nothing new to send.
 A project shared read-only cannot be pushed — the platform refuses, and retrying changes nothing.
 Make the changes, then hand them to the owner as a diff or a branch instead of pushing.
 
+A push refused because the platform has commits this branch does not means somebody else pushed
+first. Bring their commits down with `momdeploy pull` (`/mom:pull` covers a diverged branch), then
+push again.
+
 Build logs are not available to users — the log gives step names and their outcome. When a step
 fails, look for the cause in the manifest and the Dockerfile, fix it, and push again.
 
@@ -198,6 +209,7 @@ point a domain, fill a placeholder.
 | `Access: read-only` in the clone report, or a push refused with `403` | The project was shared as viewer. Do not retry; hand the changes to the owner. |
 | `deploy failed at the build` | The build broke: check the manifest and the Dockerfile against the failing step's name. |
 | `a newer push took over` | Another push superseded this one; follow that deploy instead. |
+| `the platform has commits this branch does not — somebody else pushed` | `momdeploy pull` first (`--rebase` when this branch has commits of its own), then push again. |
 | `no project …: it does not exist, or nobody has shared it with you` | Wrong id, slug or name, or the project was never shared with this account. `project list` shows what is reachable. |
 | `… projects are called "…"; clone one by its slug` | Two projects share that name. Use the slug the message prints. |
 | `… is not empty; clone into another directory` | The target directory has files. Clone elsewhere, or use the directory that already holds the code. |
